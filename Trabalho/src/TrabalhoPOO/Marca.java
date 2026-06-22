@@ -1,3 +1,5 @@
+package TrabalhoPOO;
+
 public class Marca {
     int codigo;
     String nomeFantasia;

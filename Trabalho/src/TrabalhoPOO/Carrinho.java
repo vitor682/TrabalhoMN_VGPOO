@@ -1,3 +1,5 @@
+package TrabalhoPOO;
+
 public class Carrinho {
     Item[] itens = new Item[100];
     int qtdItens = 0;

@@ -1,3 +1,4 @@
+package TrabalhoPOO;
 
 import java.util.Scanner;
 import java.text.SimpleDateFormat;
@@ -52,7 +53,7 @@ public class Main {
 
             System.out.println("\n=== ADMINISTRADOR ===");
             System.out.println("1 - CRUD Marca");
-            System.out.println("2 - CRUD Produto");
+            System.out.println("2 - CRUD TrabalhoPOO.Produto");
             System.out.println("3 - Listagens");
             System.out.println("4 - Configurar Tabela");
             System.out.println("0 - Voltar");
@@ -121,7 +122,7 @@ public class Main {
 
                 case 2:
 
-                    Marca[] marcas = s.listarMarcas();//vai fazer esse funcao ir no Sistema para apenas retornar o vetor de Marcas
+                    Marca[] marcas = s.listarMarcas();//vai fazer esse funcao ir no TrabalhoPOO.Sistema para apenas retornar o vetor de Marcas
 
                     System.out.printf("%-" + s.largura + "s %-" + s.largura + "s %-" + s.largura + "s\n",
                             "COD", "NOME", "FABRICANTE");
@@ -192,7 +193,7 @@ public class Main {
 
                     if (s.nomeProdutoExiste(nome)) {
 
-                        System.out.println("Produto já existe!");
+                        System.out.println("TrabalhoPOO.Produto já existe!");
 
                         break;
                     }
@@ -286,9 +287,9 @@ public class Main {
                     boolean excluiuProduto = s.excluirProduto(cod);
 
                     if (excluiuProduto) {
-                        System.out.println("Produto excluído!");
+                        System.out.println("TrabalhoPOO.Produto excluído!");
                     } else {
-                        System.out.println("Produto marcado como excluído!");
+                        System.out.println("TrabalhoPOO.Produto marcado como excluído!");
                     }
 
                     break;
@@ -487,7 +488,7 @@ public class Main {
 
                     } else {
 
-                        System.out.println("Venda não encontrada!");
+                        System.out.println("TrabalhoPOO.Venda não encontrada!");
                     }
 
                     break;
@@ -540,7 +541,7 @@ public class Main {
 
                     if (p == null) {
 
-                        System.out.println("Produto inválido!");
+                        System.out.println("TrabalhoPOO.Produto inválido!");
 
                         break;
                     }
@@ -552,7 +553,7 @@ public class Main {
 
                     carrinho.addItem(item);
 
-                    System.out.println("Produto adicionado!");
+                    System.out.println("TrabalhoPOO.Produto adicionado!");
 
                     break;
 
@@ -578,7 +579,7 @@ public class Main {
 
                     s.finalizarVenda(venda);
 
-                    System.out.println("Venda realizada!");
+                    System.out.println("TrabalhoPOO.Venda realizada!");
 
                     carrinho = new Carrinho();
 

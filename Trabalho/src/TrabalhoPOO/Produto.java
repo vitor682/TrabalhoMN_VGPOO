@@ -1,3 +1,5 @@
+package TrabalhoPOO;
+
 public class Produto {
     int codigo;
     String nome;
