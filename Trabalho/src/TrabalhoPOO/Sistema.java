@@ -1,253 +1,262 @@
 package TrabalhoPOO;
 
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Sistema {
 
-    Produto[] produtos = new Produto[100];
-    Marca[] marcas = new Marca[100];
-    Venda[] vendas = new Venda[100];
+    private static Sistema instancia;
 
-    int qtdProdutos = 0;
-    int qtdMarcas = 0;
-    int qtdVendas = 0;
+    private List<Produto> produtos = new ArrayList<>();
+    private List<Marca> marcas = new ArrayList<>();
+    private List<Venda> vendas = new ArrayList<>();
+    private List<Usuario> usuarios = new ArrayList<>();
 
-    int codProduto = 1;
-    int codMarca = 1;
-    int codVenda = 1;
+    private int largura = 15;
 
-    int largura = 15;
+    private Sistema() {}
 
-    Marca criarMarca(String nome, String fabricante, String cnpj) {
-        Marca m = new Marca();
-        m.codigo = codMarca++;
-        m.nomeFantasia = nome;
-        m.fabricante = fabricante;
-        m.cnpj = cnpj;
-        return m;
+    public static Sistema getInstancia() {
+        if (instancia == null) {
+            instancia = new Sistema();
+        }
+        return instancia;
     }
 
-    void inserirMarca(Marca m) {
-        marcas[qtdMarcas++] = m;
+    public int getLargura() { return largura; }
+    public void setLargura(int largura) { this.largura = largura; }
+
+    // ========== MARCA ==========
+
+    public void inserirMarca(Marca m) {
+        marcas.add(m);
     }
 
-    Marca[] listarMarcas() {
+    public List<Marca> listarMarcas() {
         return marcas;
     }
 
-    Marca buscarMarca(int cod) {
-        for (int i = 0; i < qtdMarcas; i++) {
-            if (marcas[i].codigo == cod) {
-                return marcas[i];
-            }
+    public Marca buscarMarca(int cod) {
+        for (Marca m : marcas) {
+            if (m.getCodigo() == cod) return m;
         }
         return null;
     }
 
-    boolean marcaTemProduto(int codMarca) {
-        for (int i = 0; i < qtdProdutos; i++) {
-            if (produtos[i].marca.codigo == codMarca) {
+    public boolean marcaTemProduto(int codMarca) {
+        for (Produto p : produtos) {
+            if (p.getMarca().getCodigo() == codMarca) return true;
+        }
+        return false;
+    }
+
+    public boolean excluirMarca(int cod) {
+        if (marcaTemProduto(cod)) return false;
+        for (int i = 0; i < marcas.size(); i++) {
+            if (marcas.get(i).getCodigo() == cod) {
+                marcas.remove(i);
                 return true;
             }
         }
         return false;
     }
 
-    boolean excluirMarca(int cod) {
-        if (marcaTemProduto(cod)) {
-            return false;
-        }
-        for (int i = 0; i < qtdMarcas; i++) {
-            if (marcas[i].codigo == cod) {
-                marcas[i] = marcas[qtdMarcas - 1];
-                qtdMarcas--;
-                return true;
-            }
-        }
-        return false;
-    }
-
-    boolean atualizarMarca(int cod, String novoNome, String novoFabricante, String novoCnpj) {
+    public boolean atualizarMarca(int cod, String novoNome, String novoFabricante, String novoCnpj) {
         Marca m = buscarMarca(cod);
-        if (m == null) {
-            return false;
-        }
-        if (novoNome != null && !novoNome.isEmpty()) {
-            m.nomeFantasia = novoNome;
-        }
-        if (novoFabricante != null && !novoFabricante.isEmpty()) {
-            m.fabricante = novoFabricante;
-        }
-        if (novoCnpj != null && !novoCnpj.isEmpty()) {
-            m.cnpj = novoCnpj;
-        }
+        if (m == null) return false;
+        if (novoNome != null && !novoNome.isEmpty()) m.setNomeFantasia(novoNome);
+        if (novoFabricante != null && !novoFabricante.isEmpty()) m.setFabricante(novoFabricante);
+        if (novoCnpj != null && !novoCnpj.isEmpty()) m.setCnpj(novoCnpj);
         return true;
     }
 
-    Produto criarProduto(String nome, Marca marca, double preco, int qtd) {
-        Produto p = new Produto();
-        p.codigo = codProduto++;
-        p.nome = nome;
-        p.marca = marca;
-        p.preco = preco;
-        p.quantEmEstoque = qtd;
-        return p;
+    // ========== PRODUTO ==========
+
+    public void inserirProduto(Produto p) {
+        produtos.add(p);
     }
 
-    void inserirProduto(Produto p) {
-        produtos[qtdProdutos++] = p;
-    }
-
-    boolean nomeProdutoExiste(String nome) {
-        for (int i = 0; i < qtdProdutos; i++) {
-            if (produtos[i].nome.equalsIgnoreCase(nome)) {
-                return true;
-            }
+    public boolean nomeProdutoExiste(String nome) {
+        for (Produto p : produtos) {
+            if (p.getNome().equalsIgnoreCase(nome)) return true;
         }
         return false;
     }
 
-    Produto buscarProduto(int cod) {
-        for (int i = 0; i < qtdProdutos; i++) {
-            if (produtos[i].codigo == cod && produtos[i].excluido == false) {
-                return produtos[i];
-            }
+    public Produto buscarProduto(int cod) {
+        for (Produto p : produtos) {
+            if (p.getCodigo() == cod && !p.isExcluido()) return p;
         }
         return null;
     }
 
-    Produto[] listarProdutos() {
+    public List<Produto> listarProdutos() {
         return produtos;
     }
 
-    boolean produtoTemVenda(int codProduto) {
-        for (int i = 0; i < qtdVendas; i++) {
-            Venda v = vendas[i];
-            for (int j = 0; j < v.qtdItens; j++) {
-                if (v.itensVendidos[j].produto.codigo == codProduto) {
-                    return true;
-                }
+    public boolean produtoTemVenda(int codProduto) {
+        for (Venda v : vendas) {
+            for (Item item : v.getItensVendidos()) {
+                if (item.getProduto().getCodigo() == codProduto) return true;
             }
         }
         return false;
     }
 
-    boolean excluirProduto(int cod) {
-        for (int i = 0; i < qtdProdutos; i++) {
-            if (produtos[i].codigo == cod) {
+    public boolean excluirProduto(int cod) {
+        for (int i = 0; i < produtos.size(); i++) {
+            Produto p = produtos.get(i);
+            if (p.getCodigo() == cod) {
                 if (produtoTemVenda(cod)) {
-                    produtos[i].excluido = true;
+                    p.setExcluido(true);
                     return false;
                 }
-                produtos[i] = produtos[qtdProdutos - 1];
-                qtdProdutos--;
+                produtos.remove(i);
                 return true;
             }
         }
         return false;
     }
 
-    boolean atualizarProduto(int cod, String novoNome, int codMarca, double novoPreco, int novaQtd) {
+    public boolean atualizarProduto(int cod, String novoNome, int codMarca, double novoPreco, int novaQtd) {
         Produto p = buscarProduto(cod);
-        if (p == null) {
-            return false;
-        }
-        if (novoNome != null && !novoNome.isEmpty()) {
-            p.nome = novoNome;
-        }
+        if (p == null) return false;
+        if (novoNome != null && !novoNome.isEmpty()) p.setNome(novoNome);
         if (codMarca > 0) {
             Marca m = buscarMarca(codMarca);
-            if (m == null) {
-                return false;
+            if (m == null) return false;
+            p.setMarca(m);
+        }
+        if (novoPreco > 0) p.setPreco(novoPreco);
+        if (novaQtd >= 0) p.setQuantEmEstoque(novaQtd);
+        return true;
+    }
+
+    public List<Produto> listarProdutosOrdenados() {
+        List<Produto> aux = new ArrayList<>(produtos);
+        for (int i = 0; i < aux.size() - 1; i++) {
+            for (int j = i + 1; j < aux.size(); j++) {
+                if (aux.get(i).getNome().compareToIgnoreCase(aux.get(j).getNome()) > 0) {
+                    Produto temp = aux.get(i);
+                    aux.set(i, aux.get(j));
+                    aux.set(j, temp);
+                }
             }
-            p.marca = m;
         }
-        if (novoPreco > 0) {
-            p.preco = novoPreco;
+        return aux;
+    }
+
+    public List<Produto> listarProdutosPorMarca(int codMarca) {
+        List<Produto> aux = new ArrayList<>();
+        for (Produto p : produtos) {
+            if (p.getMarca().getCodigo() == codMarca && !p.isExcluido()) {
+                aux.add(p);
+            }
         }
-        if (novaQtd >= 0) {
-            p.quantEmEstoque = novaQtd;
+        return aux;
+    }
+
+    // ========== VENDA ==========
+
+    public boolean estoqueValido(Carrinho c) {
+        for (Item item : c.getItens()) {
+            if (item.getQuantidade() > item.getProduto().getQuantEmEstoque()) return false;
         }
         return true;
     }
 
-    Item criarItem(Produto p, int qtd) {
-        Item item = new Item();
-        item.produto = p;
-        item.quantidade = qtd;
-        item.preco = p.preco;
-        return item;
-    }
-
-    Venda criarVenda(String cliente, Carrinho c) {
-        Venda v = new Venda();
-        v.codigo = codVenda++;
-        v.data = new Date();
-        v.nomeCliente = cliente;
-        for (int i = 0; i < c.qtdItens; i++) {
-            v.itensVendidos[v.qtdItens++] = c.itens[i];
-        }
-        return v;
-    }
-
-    boolean estoqueValido(Carrinho c) {
-        for (int i = 0; i < c.qtdItens; i++) {
-            Item item = c.itens[i];
-            if (item.quantidade > item.produto.quantEmEstoque) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    void finalizarVenda(Venda v) {
-        vendas[qtdVendas++] = v;
-        for (int i = 0; i < v.qtdItens; i++) {
-            Item item = v.itensVendidos[i];
-            item.produto.quantEmEstoque -= item.quantidade;
+    public void finalizarVenda(Venda v) {
+        vendas.add(v);
+        for (Item item : v.getItensVendidos()) {
+            item.getProduto().setQuantEmEstoque(item.getProduto().getQuantEmEstoque() - item.getQuantidade());
         }
     }
 
-    double valorVenda(Venda v) {
+    public double valorVenda(Venda v) {
         double total = 0;
-        for (int i = 0; i < v.qtdItens; i++) {
-            total += v.itensVendidos[i].preco * v.itensVendidos[i].quantidade;
+        for (Item item : v.getItensVendidos()) {
+            total += item.getPreco() * item.getQuantidade();
         }
         return total;
     }
 
-    Venda[] listarVendas() {
+    public List<Venda> listarVendas() {
         return vendas;
     }
 
-    Venda buscarVenda(int cod) {
-        for (int i = 0; i < qtdVendas; i++) {
-            if (vendas[i].codigo == cod) {
-                return vendas[i];
-            }
+    public Venda buscarVenda(int cod) {
+        for (Venda v : vendas) {
+            if (v.getCodigo() == cod) return v;
         }
         return null;
     }
 
-    Venda detalharVenda(Venda v) {
-        return v;
+    // ========== USUARIO ==========
+
+    public void inserirUsuario(Usuario u) {
+        usuarios.add(u);
     }
 
-    void init() {
-        Marca m1 = criarMarca("PratoFino", "EmpresaA", "111");
-        Marca m2 = criarMarca("Mara", "EmpresaB", "222");
-        Marca m3 = criarMarca("Supangi", "EmpresaC", "333");
+    public List<Usuario> listarUsuarios() {
+        return usuarios;
+    }
 
+    public Usuario buscarUsuario(int id) {
+        for (Usuario u : usuarios) {
+            if (u.getId() == id) return u;
+        }
+        return null;
+    }
+
+    public Usuario buscarUsuarioPorLogin(String nomeUsuario, String senha) {
+        for (Usuario u : usuarios) {
+            if (u.getNomeUsuario().equals(nomeUsuario) && u.getSenha().equals(senha)) return u;
+        }
+        return null;
+    }
+
+    public boolean nomeUsuarioExiste(String nomeUsuario) {
+        for (Usuario u : usuarios) {
+            if (u.getNomeUsuario().equals(nomeUsuario)) return true;
+        }
+        return false;
+    }
+
+    public boolean excluirUsuario(int id) {
+        for (int i = 0; i < usuarios.size(); i++) {
+            if (usuarios.get(i).getId() == id) {
+                usuarios.remove(i);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean atualizarUsuario(int id, String novoNome, String novoNomeUsuario, String novaSenha, Tipousuario novoTipo) {
+        Usuario u = buscarUsuario(id);
+        if (u == null) return false;
+        if (novoNome != null && !novoNome.isEmpty()) u.setNome(novoNome);
+        if (novoNomeUsuario != null && !novoNomeUsuario.isEmpty()) u.setNomeUsuario(novoNomeUsuario);
+        if (novaSenha != null && !novaSenha.isEmpty()) u.setSenha(novaSenha);
+        if (novoTipo != null) u.setTipo(novoTipo);
+        return true;
+    }
+
+    // ========== INIT ==========
+
+    public void init() {
+        Marca m1 = Marca.criar("PratoFino", "EmpresaA", "111");
+        Marca m2 = Marca.criar("Mara", "EmpresaB", "222");
+        Marca m3 = Marca.criar("Supangi", "EmpresaC", "333");
         inserirMarca(m1);
         inserirMarca(m2);
         inserirMarca(m3);
 
-        Produto p1 = criarProduto("Arroz", m1, 25, 100);
-        Produto p2 = criarProduto("Feijao", m2, 10, 50);
-        Produto p3 = criarProduto("Cafe", m3, 15, 30);
-        Produto p4 = criarProduto("Macarrao", m1, 7, 200);
-        Produto p5 = criarProduto("Acucar", m2, 5, 500);
-
+        Produto p1 = Produto.criar("Arroz", m1, 25, 100);
+        Produto p2 = Produto.criar("Feijao", m2, 10, 50);
+        Produto p3 = Produto.criar("Cafe", m3, 15, 30);
+        Produto p4 = Produto.criar("Macarrao", m1, 7, 200);
+        Produto p5 = Produto.criar("Acucar", m2, 5, 500);
         inserirProduto(p1);
         inserirProduto(p2);
         inserirProduto(p3);
@@ -255,54 +264,15 @@ public class Sistema {
         inserirProduto(p5);
 
         Carrinho c1 = new Carrinho();
-        c1.addItem(criarItem(p1, 2));
-        c1.addItem(criarItem(p2, 1));
-        Venda v1 = criarVenda("Matheus", c1);
-        finalizarVenda(v1);
+        c1.addItem(Item.criar(p1, 2));
+        c1.addItem(Item.criar(p2, 1));
+        finalizarVenda(Venda.criar("Matheus", c1));
 
         Carrinho c2 = new Carrinho();
-        c2.addItem(criarItem(p3, 1));
-        Venda v2 = criarVenda("Joao", c2);
-        finalizarVenda(v2);
-    }
+        c2.addItem(Item.criar(p3, 1));
+        finalizarVenda(Venda.criar("Joao", c2));
 
-    Produto[] listarProdutosOrdenados() {
-        Produto[] aux = new Produto[100];
-        for (int i = 0; i < qtdProdutos; i++) {
-            aux[i] = produtos[i];
-        }
-        for (int i = 0; i < qtdProdutos - 1; i++) {
-            for (int j = i + 1; j < qtdProdutos; j++) {
-                if (aux[i].nome.compareToIgnoreCase(aux[j].nome) > 0) {
-                    Produto temp = aux[i];
-                    aux[i] = aux[j];
-                    aux[j] = temp;
-                }
-            }
-        }
-        return aux;
-    }
-
-    Produto[] listarProdutosPorMarca(int codMarca) {
-        Produto[] aux = new Produto[100];
-        int qtd = 0;
-        for (int i = 0; i < qtdProdutos; i++) {
-            Produto p = produtos[i];
-            if (p.marca.codigo == codMarca && p.excluido == false) {
-                aux[qtd] = p;
-                qtd++;
-            }
-        }
-        return aux;
-    }
-
-    int contarProdutosPorMarca(int codMarca) {
-        int qtd = 0;
-        for (int i = 0; i < qtdProdutos; i++) {
-            if (produtos[i].marca.codigo == codMarca && produtos[i].excluido == false) {
-                qtd++;
-            }
-        }
-        return qtd;
+        inserirUsuario(Usuario.criar("Administrador", "admin", "1234", Tipousuario.ADMIN));
+        inserirUsuario(Usuario.criar("Atendente", "atendente", "1234", Tipousuario.ATENDENTE));
     }
 }

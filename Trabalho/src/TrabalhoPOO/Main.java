@@ -1,80 +1,136 @@
 package TrabalhoPOO;
 
+import java.util.List;
 import java.util.Scanner;
 import java.text.SimpleDateFormat;
 
-//Matheus Nascimento e Vitor Lucas
 public class Main {
     static SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
 
     public static void main(String[] args) {
         Scanner scn = new Scanner(System.in);
-        Sistema s = new Sistema();
+        Sistema s = Sistema.getInstancia();
         s.init();
 
-        int op;
+        while (true) {
+            Usuario usuario = telaLogin(scn, s);
+            if (usuario == null) {
+                System.out.println("Encerrando...");
+                break;
+            }
 
+            boolean trocar = false;
+            if (usuario.getTipo() == Tipousuario.ADMIN) {
+                trocar = menuAdministrador(scn, s);
+            } else {
+                trocar = menuAtendente(scn, s);
+            }
+
+            if (!trocar) break;
+        }
+    }
+
+    static Usuario telaLogin(Scanner scn, Sistema s) {
+        System.out.println("\n=== LOGIN ===");
+        System.out.println("0 - Sair");
+        System.out.print("Usuário: ");
+        String nomeUsuario = scn.next();
+
+        if (nomeUsuario.equals("0")) return null;
+
+        System.out.print("Senha: ");
+        String senha = scn.next();
+
+        Usuario u = s.buscarUsuarioPorLogin(nomeUsuario, senha);
+        if (u == null) {
+            System.out.println("Usuário ou senha inválidos!");
+            return telaLogin(scn, s);
+        }
+
+        System.out.println("Bem-vindo, " + u.getNome() + " [" + u.getTipo() + "]");
+        return u;
+    }
+
+    // Retorna true se o usuário quer trocar de usuário, false para sair do sistema
+    static boolean menuAdministrador(Scanner scn, Sistema s) {
+        int op;
         do {
-            System.out.println("\n=== SISTEMA ===");
-            System.out.println("1 - Administrador");
-            System.out.println("2 - Atendente");
+            System.out.println("\n=== ADMINISTRADOR ===");
+            System.out.println("1 - CRUD Marca");
+            System.out.println("2 - CRUD Produto");
+            System.out.println("3 - CRUD Usuário");
+            System.out.println("4 - Listagens");
+            System.out.println("5 - Configurar Tabela");
+            System.out.println("9 - Trocar usuário");
+            System.out.println("0 - Sair");
+
+            op = scn.nextInt();
+
+            switch (op) {
+                case 1: crudMarca(scn, s); break;
+                case 2: crudProduto(scn, s); break;
+                case 3: crudUsuario(scn, s); break;
+                case 4: menuListagens(scn, s); break;
+                case 5:
+                    System.out.print("Nova largura: ");
+                    s.setLargura(scn.nextInt());
+                    break;
+                case 9: return true;
+                case 0: return false;
+            }
+        } while (true);
+    }
+
+    static boolean menuAtendente(Scanner scn, Sistema s) {
+        Carrinho carrinho = new Carrinho();
+        int op;
+        do {
+            System.out.println("\n=== ATENDENTE ===");
+            System.out.println("1 - Adicionar produto");
+            System.out.println("2 - Ver carrinho");
+            System.out.println("3 - Finalizar venda");
+            System.out.println("9 - Trocar usuário");
             System.out.println("0 - Sair");
 
             op = scn.nextInt();
 
             switch (op) {
                 case 1:
-                    menuAdministrador(scn, s);
+                    listarProdutosTabela(s, s.listarProdutos());
+                    System.out.print("Código produto: ");
+                    int codProduto = scn.nextInt();
+                    Produto p = s.buscarProduto(codProduto);
+                    if (p == null) { System.out.println("Produto inválido!"); break; }
+                    System.out.print("Quantidade: ");
+                    int qtd = scn.nextInt();
+                    carrinho.addItem(Item.criar(p, qtd));
+                    System.out.println("Produto adicionado!");
                     break;
+
                 case 2:
-                    menuAtendente(scn, s);
+                    mostrarCarrinho(carrinho);
                     break;
-                case 0:
-                    System.out.println("Encerrando...");
-                    break;
-                default:
-                    System.out.println("Opção inválida!");
-            }
 
-        } while (op != 0);
-    }
-
-    static void menuAdministrador(Scanner scn, Sistema s) {
-        int op;
-
-        do {
-            System.out.println("\n=== ADMINISTRADOR ===");
-            System.out.println("1 - CRUD Marca");
-            System.out.println("2 - CRUD Produto");
-            System.out.println("3 - Listagens");
-            System.out.println("4 - Configurar Tabela");
-            System.out.println("0 - Voltar");
-
-            op = scn.nextInt();
-
-            switch (op) {
-                case 1:
-                    crudMarca(scn, s);
-                    break;
-                case 2:
-                    crudProduto(scn, s);
-                    break;
                 case 3:
-                    menuListagens(scn, s);
+                    if (carrinho.getQtdItens() == 0) { System.out.println("Carrinho vazio!"); break; }
+                    if (!s.estoqueValido(carrinho)) { System.out.println("Estoque insuficiente!"); break; }
+                    System.out.print("Nome cliente: ");
+                    String cliente = scn.next();
+                    s.finalizarVenda(Venda.criar(cliente, carrinho));
+                    System.out.println("Venda realizada!");
+                    carrinho = new Carrinho();
                     break;
-                case 4:
-                    System.out.print("Nova largura: ");
-                    int largura = scn.nextInt();
-                    s.largura = largura;
-                    break;
-            }
 
-        } while (op != 0);
+                case 9: return true;
+                case 0: return false;
+            }
+        } while (true);
     }
+
+    // ========== CRUD MARCA ==========
 
     static void crudMarca(Scanner scn, Sistema s) {
         int op;
-
         do {
             System.out.println("\n=== CRUD MARCA ===");
             System.out.println("1 - Cadastrar");
@@ -86,20 +142,14 @@ public class Main {
             op = scn.nextInt();
 
             switch (op) {
-
                 case 1:
                     System.out.print("Nome Fantasia: ");
                     String nome = scn.next();
-
                     System.out.print("Fabricante: ");
                     String fabricante = scn.next();
-
                     System.out.print("CNPJ: ");
                     String cnpj = scn.next();
-
-                    Marca m = s.criarMarca(nome, fabricante, cnpj);
-                    s.inserirMarca(m);
-
+                    s.inserirMarca(Marca.criar(nome, fabricante, cnpj));
                     System.out.println("Marca cadastrada!");
                     break;
 
@@ -109,62 +159,37 @@ public class Main {
 
                 case 3:
                     listarMarcasTabela(s);
-
                     System.out.print("Código da marca a atualizar: ");
-                    int codAtualizar = scn.nextInt();
-
-                    Marca marcaAtualizar = s.buscarMarca(codAtualizar);
-
-                    if (marcaAtualizar == null) {
-                        System.out.println("Marca não encontrada!");
-                        break;
-                    }
-
-                    System.out.println("Deixe em branco (pressione ENTER) para manter o valor atual.");
-
-                    System.out.print("Novo Nome Fantasia [" + marcaAtualizar.nomeFantasia + "]: ");
+                    int codAt = scn.nextInt();
+                    Marca marcaAt = s.buscarMarca(codAt);
+                    if (marcaAt == null) { System.out.println("Marca não encontrada!"); break; }
+                    System.out.println("Digite '-' para manter o valor atual.");
+                    System.out.print("Novo Nome Fantasia [" + marcaAt.getNomeFantasia() + "]: ");
                     String novoNome = scn.next();
                     if (novoNome.equals("-")) novoNome = "";
-
-                    System.out.print("Novo Fabricante [" + marcaAtualizar.fabricante + "]: ");
-                    String novoFabricante = scn.next();
-                    if (novoFabricante.equals("-")) novoFabricante = "";
-
-                    System.out.print("Novo CNPJ [" + marcaAtualizar.cnpj + "]: ");
+                    System.out.print("Novo Fabricante [" + marcaAt.getFabricante() + "]: ");
+                    String novoFab = scn.next();
+                    if (novoFab.equals("-")) novoFab = "";
+                    System.out.print("Novo CNPJ [" + marcaAt.getCnpj() + "]: ");
                     String novoCnpj = scn.next();
                     if (novoCnpj.equals("-")) novoCnpj = "";
-
-                    boolean atualizouMarca = s.atualizarMarca(codAtualizar, novoNome, novoFabricante, novoCnpj);
-
-                    if (atualizouMarca) {
-                        System.out.println("Marca atualizada!");
-                    } else {
-                        System.out.println("Erro ao atualizar marca!");
-                    }
+                    System.out.println(s.atualizarMarca(codAt, novoNome, novoFab, novoCnpj) ? "Marca atualizada!" : "Erro ao atualizar!");
                     break;
 
                 case 4:
                     listarMarcasTabela(s);
-
                     System.out.print("Código: ");
                     int cod = scn.nextInt();
-
-                    boolean excluiuMarca = s.excluirMarca(cod);
-
-                    if (excluiuMarca) {
-                        System.out.println("Marca excluída!");
-                    } else {
-                        System.out.println("Marca possui produtos ou não existe!");
-                    }
+                    System.out.println(s.excluirMarca(cod) ? "Marca excluída!" : "Marca possui produtos ou não existe!");
                     break;
             }
-
         } while (op != 0);
     }
 
+    // ========== CRUD PRODUTO ==========
+
     static void crudProduto(Scanner scn, Sistema s) {
         int op;
-
         do {
             System.out.println("\n=== CRUD PRODUTO ===");
             System.out.println("1 - Cadastrar");
@@ -176,37 +201,20 @@ public class Main {
             op = scn.nextInt();
 
             switch (op) {
-
                 case 1:
                     System.out.print("Nome: ");
                     String nome = scn.next();
-
-                    if (s.nomeProdutoExiste(nome)) {
-                        System.out.println("Produto já existe!");
-                        break;
-                    }
-
+                    if (s.nomeProdutoExiste(nome)) { System.out.println("Produto já existe!"); break; }
                     listarMarcasTabela(s);
-
                     System.out.print("Código da marca: ");
                     int codMarcaCad = scn.nextInt();
-
                     Marca marcaCad = s.buscarMarca(codMarcaCad);
-
-                    if (marcaCad == null) {
-                        System.out.println("Marca inválida!");
-                        break;
-                    }
-
+                    if (marcaCad == null) { System.out.println("Marca inválida!"); break; }
                     System.out.print("Preço: ");
                     double preco = scn.nextDouble();
-
                     System.out.print("Quantidade: ");
                     int qtd = scn.nextInt();
-
-                    Produto p = s.criarProduto(nome, marcaCad, preco, qtd);
-                    s.inserirProduto(p);
-
+                    s.inserirProduto(Produto.criar(nome, marcaCad, preco, qtd));
                     System.out.println("Produto cadastrado!");
                     break;
 
@@ -216,64 +224,110 @@ public class Main {
 
                 case 3:
                     listarProdutosTabela(s, s.listarProdutos());
-
                     System.out.print("Código do produto a atualizar: ");
-                    int codAtualizar = scn.nextInt();
-
-                    Produto prodAtualizar = s.buscarProduto(codAtualizar);
-
-                    if (prodAtualizar == null) {
-                        System.out.println("Produto não encontrado!");
-                        break;
-                    }
-
+                    int codAt = scn.nextInt();
+                    Produto prodAt = s.buscarProduto(codAt);
+                    if (prodAt == null) { System.out.println("Produto não encontrado!"); break; }
                     System.out.println("Digite '-' para manter o valor atual (texto) ou 0 para manter (número).");
-
-                    System.out.print("Novo Nome [" + prodAtualizar.nome + "]: ");
+                    System.out.print("Novo Nome [" + prodAt.getNome() + "]: ");
                     String novoNome = scn.next();
                     if (novoNome.equals("-")) novoNome = "";
-
-                    listarMarcasTabela(s);
-                    System.out.print("Novo Código de Marca [" + prodAtualizar.marca.codigo + "] (0 para manter): ");
+                    System.out.print("Novo Código de Marca [" + prodAt.getMarca().getCodigo() + "]: ");
                     int novoCodMarca = scn.nextInt();
-
-                    System.out.print("Novo Preço [" + prodAtualizar.preco + "] (0 para manter): ");
+                    System.out.print("Novo Preço [" + prodAt.getPreco() + "]: ");
                     double novoPreco = scn.nextDouble();
-
-                    System.out.print("Nova Quantidade [" + prodAtualizar.quantEmEstoque + "] (-1 para manter): ");
+                    System.out.print("Nova Qtd [" + prodAt.getQuantEmEstoque() + "]: ");
                     int novaQtd = scn.nextInt();
-
-                    boolean atualizouProduto = s.atualizarProduto(codAtualizar, novoNome, novoCodMarca, novoPreco, novaQtd);
-
-                    if (atualizouProduto) {
-                        System.out.println("Produto atualizado!");
-                    } else {
-                        System.out.println("Erro ao atualizar produto! Verifique se a marca informada existe.");
-                    }
+                    if (novaQtd == 0) novaQtd = -1;
+                    boolean atualizou = s.atualizarProduto(codAt, novoNome, novoCodMarca, novoPreco, novaQtd);
+                    System.out.println(atualizou ? "Produto atualizado!" : "Erro ao atualizar!");
                     break;
 
                 case 4:
                     listarProdutosTabela(s, s.listarProdutos());
-
                     System.out.print("Código: ");
                     int cod = scn.nextInt();
-
-                    boolean excluiuProduto = s.excluirProduto(cod);
-
-                    if (excluiuProduto) {
+                    boolean excluiu = s.excluirProduto(cod);
+                    if (excluiu) {
                         System.out.println("Produto excluído!");
                     } else {
                         System.out.println("Produto marcado como excluído (possui vendas)!");
                     }
                     break;
             }
-
         } while (op != 0);
     }
 
+    // ========== CRUD USUARIO ==========
+
+    static void crudUsuario(Scanner scn, Sistema s) {
+        int op;
+        do {
+            System.out.println("\n=== CRUD USUÁRIO ===");
+            System.out.println("1 - Cadastrar");
+            System.out.println("2 - Listar");
+            System.out.println("3 - Atualizar");
+            System.out.println("4 - Excluir");
+            System.out.println("0 - Voltar");
+
+            op = scn.nextInt();
+
+            switch (op) {
+                case 1:
+                    System.out.print("Nome: ");
+                    String nome = scn.next();
+                    System.out.print("Nome de usuário: ");
+                    String nomeUsuario = scn.next();
+                    if (s.nomeUsuarioExiste(nomeUsuario)) { System.out.println("Nome de usuário já existe!"); break; }
+                    System.out.print("Senha: ");
+                    String senha = scn.next();
+                    System.out.println("Tipo (1 - ADMIN / 2 - ATENDENTE): ");
+                    int tipoInt = scn.nextInt();
+                    Tipousuario tipo = tipoInt == 1 ? Tipousuario.ADMIN : Tipousuario.ATENDENTE;
+                    s.inserirUsuario(Usuario.criar(nome, nomeUsuario, senha, tipo));
+                    System.out.println("Usuário cadastrado!");
+                    break;
+
+                case 2:
+                    listarUsuariosTabela(s);
+                    break;
+
+                case 3:
+                    listarUsuariosTabela(s);
+                    System.out.print("ID do usuário a atualizar: ");
+                    int idAt = scn.nextInt();
+                    Usuario uAt = s.buscarUsuario(idAt);
+                    if (uAt == null) { System.out.println("Usuário não encontrado!"); break; }
+                    System.out.println("Digite '-' para manter o valor atual.");
+                    System.out.print("Novo Nome [" + uAt.getNome() + "]: ");
+                    String novoNome = scn.next();
+                    if (novoNome.equals("-")) novoNome = "";
+                    System.out.print("Novo Nome de Usuário [" + uAt.getNomeUsuario() + "]: ");
+                    String novoNomeUsuario = scn.next();
+                    if (novoNomeUsuario.equals("-")) novoNomeUsuario = "";
+                    System.out.print("Nova Senha: ");
+                    String novaSenha = scn.next();
+                    if (novaSenha.equals("-")) novaSenha = "";
+                    System.out.println("Novo Tipo (1 - ADMIN / 2 - ATENDENTE / 0 - manter): ");
+                    int novoTipoInt = scn.nextInt();
+                    Tipousuario novoTipo = novoTipoInt == 1 ? Tipousuario.ADMIN : novoTipoInt == 2 ? Tipousuario.ATENDENTE : null;
+                    System.out.println(s.atualizarUsuario(idAt, novoNome, novoNomeUsuario, novaSenha, novoTipo) ? "Usuário atualizado!" : "Erro!");
+                    break;
+
+                case 4:
+                    listarUsuariosTabela(s);
+                    System.out.print("ID: ");
+                    int id = scn.nextInt();
+                    System.out.println(s.excluirUsuario(id) ? "Usuário excluído!" : "Usuário não encontrado!");
+                    break;
+            }
+        } while (op != 0);
+    }
+
+    // ========== LISTAGENS ==========
+
     static void menuListagens(Scanner scn, Sistema s) {
         int op;
-
         do {
             System.out.println("\n=== LISTAGENS ===");
             System.out.println("1 - Todos produtos");
@@ -287,211 +341,99 @@ public class Main {
             op = scn.nextInt();
 
             switch (op) {
-
-                case 1:
-                    listarProdutosTabela(s, s.listarProdutos());
-                    break;
-
-                case 2:
-                    listarProdutosTabela(s, s.listarProdutosOrdenados());
-                    break;
-
-                case 3:
-                    listarMarcasTabela(s);
-                    break;
-
+                case 1: listarProdutosTabela(s, s.listarProdutos()); break;
+                case 2: listarProdutosTabela(s, s.listarProdutosOrdenados()); break;
+                case 3: listarMarcasTabela(s); break;
                 case 4:
                     listarMarcasTabela(s);
-
                     System.out.print("Código marca: ");
                     int codMarca = scn.nextInt();
-
-                    Produto[] produtosMarca = s.listarProdutosPorMarca(codMarca);
-                    int qtdMarca = s.contarProdutosPorMarca(codMarca);
-
-                    System.out.printf("%-" + s.largura + "s %-" + s.largura + "s %-" + s.largura + "s %-" + s.largura + "s %-" + s.largura + "s\n",
-                            "COD", "NOME", "MARCA", "PRECO", "QTD");
-
-                    for (int i = 0; i < qtdMarca; i++) {
-                        Produto p = produtosMarca[i];
-                        System.out.printf("%-" + s.largura + "s %-" + s.largura + "s %-" + s.largura + "s %-" + s.largura + "s %-" + s.largura + "s\n",
-                                p.codigo,
-                                p.nome,
-                                p.marca.nomeFantasia,
-                                p.preco,
-                                p.quantEmEstoque);
-                    }
+                    listarProdutosTabela(s, s.listarProdutosPorMarca(codMarca));
                     break;
-
-                case 5:
-                    listarVendasTabela(s);
-                    break;
-
+                case 5: listarVendasTabela(s); break;
                 case 6:
                     listarVendasTabela(s);
-
                     System.out.print("Código venda: ");
                     int codVenda = scn.nextInt();
-
                     Venda v = s.buscarVenda(codVenda);
-
                     if (v != null) {
-                        Venda venda = s.detalharVenda(v);
-                        System.out.println("Código: " + venda.codigo);
-                        System.out.println("Cliente: " + venda.nomeCliente);
-                        System.out.println("Data: " + sdf.format(venda.data));
-                        System.out.println("Data e horário: " + venda.data);
-
+                        System.out.println("Código: " + v.getCodigo());
+                        System.out.println("Cliente: " + v.getNomeCliente());
+                        System.out.println("Data: " + sdf.format(v.getData()));
                         double total = 0;
-
-                        for (int i = 0; i < venda.qtdItens; i++) {
-                            Item item = venda.itensVendidos[i];
-                            double subtotal = item.preco * item.quantidade;
+                        for (Item item : v.getItensVendidos()) {
+                            double subtotal = item.getPreco() * item.getQuantidade();
                             total += subtotal;
-                            System.out.println(item.produto.nome +
-                                    " | QTD: " + item.quantidade +
-                                    " | PREÇO: " + item.preco +
+                            System.out.println(item.getProduto().getNome() +
+                                    " | QTD: " + item.getQuantidade() +
+                                    " | PREÇO: " + item.getPreco() +
                                     " | SUBTOTAL: " + subtotal);
                         }
-
                         System.out.println("TOTAL: " + total);
                     } else {
                         System.out.println("Venda não encontrada!");
                     }
                     break;
             }
-
         } while (op != 0);
     }
 
-    static void menuAtendente(Scanner scn, Sistema s) {
-        Carrinho carrinho = new Carrinho();
-        int op;
-
-        do {
-            System.out.println("\n=== ATENDENTE ===");
-            System.out.println("1 - Adicionar produto");
-            System.out.println("2 - Ver carrinho");
-            System.out.println("3 - Finalizar venda");
-            System.out.println("0 - Voltar");
-
-            op = scn.nextInt();
-
-            switch (op) {
-
-                case 1:
-                    listarProdutosTabela(s, s.listarProdutos());
-
-                    System.out.print("Código produto: ");
-                    int codProduto = scn.nextInt();
-
-                    Produto p = s.buscarProduto(codProduto);
-
-                    if (p == null) {
-                        System.out.println("Produto inválido!");
-                        break;
-                    }
-
-                    System.out.print("Quantidade: ");
-                    int qtd = scn.nextInt();
-
-                    Item item = s.criarItem(p, qtd);
-                    carrinho.addItem(item);
-
-                    System.out.println("Produto adicionado!");
-                    break;
-
-                case 2:
-                    mostrarCarrinho(carrinho);
-                    break;
-
-                case 3:
-                    if (carrinho.qtdItens == 0) {
-                        System.out.println("Carrinho vazio!");
-                        break;
-                    }
-
-                    if (!s.estoqueValido(carrinho)) {
-                        System.out.println("Estoque insuficiente!");
-                        break;
-                    }
-
-                    System.out.print("Nome cliente: ");
-                    String cliente = scn.next();
-
-                    Venda venda = s.criarVenda(cliente, carrinho);
-                    s.finalizarVenda(venda);
-
-                    System.out.println("Venda realizada!");
-                    carrinho = new Carrinho();
-                    break;
-            }
-
-        } while (op != 0);
-    }
+    // ========== TABELAS ==========
 
     static void listarMarcasTabela(Sistema s) {
-        Marca[] marcas = s.listarMarcas();
-        System.out.printf("%-" + s.largura + "s %-" + s.largura + "s %-" + s.largura + "s\n",
-                "COD", "NOME", "FABRICANTE");
-        for (int i = 0; i < s.qtdMarcas; i++) {
-            System.out.printf("%-" + s.largura + "s %-" + s.largura + "s %-" + s.largura + "s\n",
-                    marcas[i].codigo,
-                    marcas[i].nomeFantasia,
-                    marcas[i].fabricante);
+        int l = s.getLargura();
+        System.out.printf("%-" + l + "s %-" + l + "s %-" + l + "s\n", "COD", "NOME", "FABRICANTE");
+        for (Marca m : s.listarMarcas()) {
+            System.out.printf("%-" + l + "s %-" + l + "s %-" + l + "s\n",
+                    m.getCodigo(), m.getNomeFantasia(), m.getFabricante());
         }
     }
 
-    static void listarProdutosTabela(Sistema s, Produto[] produtos) {
-        System.out.printf("%-" + s.largura + "s %-" + s.largura + "s %-" + s.largura + "s %-" + s.largura + "s %-" + s.largura + "s\n",
+    static void listarProdutosTabela(Sistema s, List<Produto> produtos) {
+        int l = s.getLargura();
+        System.out.printf("%-" + l + "s %-" + l + "s %-" + l + "s %-" + l + "s %-" + l + "s\n",
                 "COD", "NOME", "MARCA", "PRECO", "QTD");
-        for (int i = 0; i < s.qtdProdutos; i++) {
-            Produto p = produtos[i];
-            if (p != null && p.excluido == false) {
-                System.out.printf("%-" + s.largura + "s %-" + s.largura + "s %-" + s.largura + "s %-" + s.largura + "s %-" + s.largura + "s\n",
-                        p.codigo,
-                        p.nome,
-                        p.marca.nomeFantasia,
-                        p.preco,
-                        p.quantEmEstoque);
+        for (Produto p : produtos) {
+            if (p != null && !p.isExcluido()) {
+                System.out.printf("%-" + l + "s %-" + l + "s %-" + l + "s %-" + l + "s %-" + l + "s\n",
+                        p.getCodigo(), p.getNome(), p.getMarca().getNomeFantasia(),
+                        p.getPreco(), p.getQuantEmEstoque());
             }
         }
     }
 
     static void listarVendasTabela(Sistema s) {
-        Venda[] vendas = s.listarVendas();
-        System.out.printf("%-" + s.largura + "s %-" + s.largura + "s %-" + s.largura + "s %-" + s.largura + "s\n",
+        int l = s.getLargura();
+        System.out.printf("%-" + l + "s %-" + l + "s %-" + l + "s %-" + l + "s\n",
                 "COD", "CLIENTE", "DATA", "VALOR");
-        for (int i = 0; i < s.qtdVendas; i++) {
-            Venda v = vendas[i];
-            System.out.printf("%-" + s.largura + "s %-" + s.largura + "s %-" + s.largura + "s %-" + s.largura + "s\n",
-                    v.codigo,
-                    v.nomeCliente,
-                    sdf.format(v.data),
-                    s.valorVenda(v));
+        for (Venda v : s.listarVendas()) {
+            System.out.printf("%-" + l + "s %-" + l + "s %-" + l + "s %-" + l + "s\n",
+                    v.getCodigo(), v.getNomeCliente(), sdf.format(v.getData()), s.valorVenda(v));
+        }
+    }
+
+    static void listarUsuariosTabela(Sistema s) {
+        int l = s.getLargura();
+        System.out.printf("%-" + l + "s %-" + l + "s %-" + l + "s %-" + l + "s\n",
+                "ID", "NOME", "USUÁRIO", "TIPO");
+        for (Usuario u : s.listarUsuarios()) {
+            System.out.printf("%-" + l + "s %-" + l + "s %-" + l + "s %-" + l + "s\n",
+                    u.getId(), u.getNome(), u.getNomeUsuario(), u.getTipo());
         }
     }
 
     static void mostrarCarrinho(Carrinho c) {
         System.out.println("\n=== CARRINHO ===");
-
-        if (c.qtdItens == 0) {
-            System.out.println("Carrinho vazio.");
-            return;
-        }
-
+        if (c.getQtdItens() == 0) { System.out.println("Carrinho vazio."); return; }
         double total = 0;
-
-        for (int i = 0; i < c.qtdItens; i++) {
-            Item item = c.itens[i];
-            double subtotal = item.preco * item.quantidade;
+        for (Item item : c.getItens()) {
+            double subtotal = item.getPreco() * item.getQuantidade();
             total += subtotal;
-            System.out.println(item.produto.nome +
-                    " | QTD: " + item.quantidade +
-                    " | PREÇO: " + item.preco +
+            System.out.println(item.getProduto().getNome() +
+                    " | QTD: " + item.getQuantidade() +
+                    " | PREÇO: " + item.getPreco() +
                     " | SUBTOTAL: " + subtotal);
         }
-
         System.out.println("TOTAL: " + total);
     }
 }

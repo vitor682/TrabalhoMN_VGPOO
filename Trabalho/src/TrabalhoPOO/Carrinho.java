@@ -1,16 +1,23 @@
 package TrabalhoPOO;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Carrinho {
-    Item[] itens = new Item[100];
-    int qtdItens = 0;
-    boolean addItem(Item item) {
-        for (int i = 0; i < qtdItens; i++) { // quando adicionar um produto se ele ja existir vai add a qtd dele
-            if (itens[i].produto.codigo == item.produto.codigo) {
-                itens[i].quantidade += item.quantidade;
+
+    private List<Item> itens = new ArrayList<>();
+
+    public boolean addItem(Item item) {
+        for (Item i : itens) {
+            if (i.getProduto().getCodigo() == item.getProduto().getCodigo()) {
+                i.setQuantidade(i.getQuantidade() + item.getQuantidade());
                 return true;
             }
         }
-        itens[qtdItens++] = item;
+        itens.add(item);
         return true;
     }
+
+    public List<Item> getItens() { return itens; }
+    public int getQtdItens() { return itens.size(); }
 }
